@@ -1,0 +1,19 @@
+package example;
+
+import com.github.talshani.flux4j.shared.ActionHandler;
+
+/**
+ * @author Tal Shani
+ */
+public class OtherStore {
+    @ActionHandler(
+            dependencies = {SomeStore.class}
+    )
+    void handle(AnAction anAction) {
+
+    }
+    @ActionHandler
+    void handleOtherStringAction() {
+
+    }
+}

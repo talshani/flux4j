@@ -1,0 +1,15 @@
+apply plugin: 'gwt-base'
+
+dependencies {
+    compile libraries.gwt_user
+}
+
+jar {
+    from sourceSets.main.allSource
+}
+
+bintray {
+    pkg {
+        desc = 'Runtime library for the flux4j framework'
+    }
+}

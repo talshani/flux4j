@@ -1,0 +1,137 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url 'http://dl.bintray.com/steffenschaefer/maven'
+        }
+    }
+
+    dependencies {
+        classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.5'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:0.5'
+    }
+}
+
+apply from: "${rootDir}/dependencies.gradle"
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.2'
+}
+
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'maven'
+    sourceCompatibility = JavaVersion.VERSION_1_7
+
+    version = '0.0.1-rc2'
+    group = "com.github.talshani.flux4j"
+
+    repositories {
+        mavenCentral()
+    }
+
+    configurations {
+        provided
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs += ["generated"]
+            }
+            compileClasspath += configurations.provided
+            runtimeClasspath += configurations.provided
+        }
+        test {
+            java {
+                srcDirs += ["generated_tests"]
+            }
+            compileClasspath += configurations.provided
+            runtimeClasspath += configurations.provided
+        }
+    }
+
+    idea {
+        module {
+            def excluded = files()
+            def included = files("$buildDir/classes/main/generated", "$buildDir/classes/test/generated_tests")
+            if (file("$buildDir").exists()) {
+                def queue = (files("$buildDir") as List) as Queue;
+                while (queue.size() > 0) {
+                    File current = queue.poll()
+                    def isAncestor = null != included.find {
+                        it.absolutePath.startsWith(current.absolutePath) || current.absolutePath.startsWith(it.absolutePath)
+                    }
+                    if (isAncestor) {
+                        current.eachDir { queue.push(it) }
+                    } else {
+                        excluded += files(current);
+                    }
+                }
+            }
+
+            scopes.COMPILE.plus += [configurations.provided]
+//            excludeDirs = excluded as Set
+//            sourceDirs += file("generated")
+//            testSourceDirs += file("generated_tests")
+        }
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                name = 'repository'
+                repository(id: 'repo', url: 'https://api.bintray.com/maven/talshani/maven/' + group) {
+                    authentication(userName: bintrayUser, password: bintrayKey)
+                }
+            }
+        }
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+
+                pom.withXml {
+                    def autoCommonDep = asNode().dependencies[0].find {dep -> dep.artifactId.text() == "auto-common"}
+                    if(autoCommonDep) autoCommonDep.remove(autoCommonDep.scope)
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = bintrayUser
+        key = bintrayKey
+        publications = ['mavenJava']
+        publish = project.hasProperty("autopublish")
+        pkg {
+            repo = 'maven'
+            name = project.group + "-" + project.name
+            licenses = ['Apache-2.0']
+            labels = []
+        }
+    }
+
+    compileJava.options.compilerArgs = ['-s', file('generated').absolutePath]
+
+    compileJava.doFirst {
+
+        if(file('generated').exists()) {
+            file('generated').deleteDir()
+        }
+        file('generated').mkdirs()
+    }
+
+    clean {
+        delete file('generated')
+        delete file('generated_tests')
+    }
+
+}
