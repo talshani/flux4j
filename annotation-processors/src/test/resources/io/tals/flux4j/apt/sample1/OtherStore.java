@@ -1,4 +1,4 @@
-package example;
+package io.tals.flux4j.apt.sample1;
 
 import io.tals.flux4j.shared.ActionHandler;
 
@@ -6,8 +6,10 @@ import io.tals.flux4j.shared.ActionHandler;
  * @author Tal Shani
  */
 public class OtherStore {
-    @ActionHandler()
-    void handle(AnAction anAction, SomeStore someStore) {
+    @ActionHandler(
+            dependencies = {SomeStore.class}
+    )
+    void handle(AnAction anAction) {
 
     }
     @ActionHandler
