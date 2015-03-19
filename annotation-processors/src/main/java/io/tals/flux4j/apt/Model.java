@@ -227,7 +227,6 @@ final class Model {
         }
 
         /**
-         *
          * @param mirror
          * @return The store with the given type, or null if no store for the given type could be found
          */
@@ -385,36 +384,23 @@ final class Model {
 
         public ImmutableList<TypeMirror> rawDependencies() {
             ImmutableList.Builder<TypeMirror> dependencies = ImmutableList.builder();
-
-            boolean first = true;
-            // all other parameters should be stores (we don't validate this yet)
             for (VariableElement param : methodElement().getParameters()) {
-                // ignore the typed argument for the action
-                if(first && isTypedHandler()) {
-                    first = false;
-                    continue;
+                if (store().dispatcher().findStoreByType(param.asType()) != null) {
+                    dependencies.add(param.asType());
                 }
-                dependencies.add(param.asType());
             }
-
-
-//            AnnotationMirror annotationMirror = getAnnotationMirror(methodElement(), ActionHandler.class);
-//            List<TypeMirror> dependencies = getTypeMirrors(getAnnotationValue(annotationMirror, "dependencies"));
             return dependencies.build();
         }
 
         public ImmutableList<Store> dependencies() {
-            ImmutableList.Builder<Store> builder = ImmutableList.builder();
-            for (TypeMirror mirror : rawDependencies()) {
-                Store storeByType = store().dispatcher().findStoreByType(mirror);
-                if (storeByType == null) {
-                    String msg = String.format("Could not find store '%s' declared as dependency for %s", mirror, methodElement());
-                    store().dispatcher().messager().printMessage(Diagnostic.Kind.ERROR, msg, methodElement());
-                    throw new ModelBuildingException(msg);
+            ImmutableList.Builder<Store> dependencies = ImmutableList.builder();
+            for (VariableElement param : methodElement().getParameters()) {
+                Store store = store().dispatcher().findStoreByType(param.asType());
+                if (store != null) {
+                    dependencies.add(store);
                 }
-                builder.add(storeByType);
             }
-            return builder.build();
+            return dependencies.build();
         }
 
         public static boolean canBeHandler(ExecutableElement el) {
@@ -515,7 +501,7 @@ final class Model {
         List<VariableElement> nonStoreParams = new ArrayList<VariableElement>();
         // remove store parameters
         for (VariableElement var : methodElement.getParameters()) {
-            if(dispatcher.findStoreByType(var.asType()) == null) {
+            if (dispatcher.findStoreByType(var.asType()) == null) {
                 nonStoreParams.add(var);
             }
         }

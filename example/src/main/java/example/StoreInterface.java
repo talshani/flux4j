@@ -9,5 +9,5 @@ import io.tals.flux4j.shared.ActionHandler;
  */
 public interface StoreInterface {
     @ActionHandler
-    void handleOtherStringAction();
+    void handleOtherStringAction(OtherStore t1, SomeStore t2);
 }

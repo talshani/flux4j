@@ -224,8 +224,8 @@ final class Printing {
             writer.println(String.format("public static void %s(%s store, %s action%s) {", method.name(),
                     method.store().fullyQualifiedName(), action.type(), signatureSb));
         } else {
-            writer.println(String.format("public static void %s(%s store) {", method.name(),
-                    method.store().fullyQualifiedName()));
+            writer.println(String.format("public static void %s(%s store%s) {", method.name(),
+                    method.store().fullyQualifiedName(), signatureSb));
         }
         writer.indent();
         writer.println(String.format("store.%s(%s%s);", method.name(),
