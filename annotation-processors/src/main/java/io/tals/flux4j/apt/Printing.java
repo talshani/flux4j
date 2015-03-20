@@ -51,6 +51,7 @@ final class Printing {
                 // store members
                 for (Model.Store store : dispatcher.stores()) {
                     writer.println(String.format("private final %s store%d;", store.fullyQualifiedName(), store.id()));
+                    writer.println(String.format("private boolean store%dChanged = false;", store.id()));
                 }
                 writer.println();
 
@@ -98,7 +99,7 @@ final class Printing {
                 for (Model.Store store : dispatcher.stores()) {
                     writer.println(String.format("this.store%1$d = store%1$d;", store.id()));
                 }
-                writer.outdent().println("}");
+                writer.outdent().outdent().println("}");
 
                 // boolean isDispatching() member
                 writer.println();
@@ -134,37 +135,40 @@ final class Printing {
                     writer.println();
                     writer.println("try {").indent();
 
+                    writer.println("resetChangedStates();");
                     if (dispatcher.hasDispatchStartedHandler()) {
                         writer.print(Model.Dispatcher.DISPATCH_STARTED_HANDLER_NAME).println("();");
                     }
 
                     for (Model.HandlerMethod handler : dispatcher.findStoreHandlersForAction(action)) {
                         // create string of dependencies to be passed to the handling method
-                        StringBuilder dependencies = new StringBuilder();
+                        StringBuilder parameters = new StringBuilder();
+                        if(action.isTyped()) {
+                            parameters.append(", action");
+                        }
                         for (Model.Store store : handler.dependencies()) {
-                            dependencies.append(", ").append("store").append(store.id());
+                            parameters.append(", ").append("store").append(store.id());
                         }
 
-                        if (action.isTyped()) {
-                            writer.println(String.format("%s.%s(store%d, action%s);",
-                                    handler.store().helperClass().fullyQualifiedName(),
-                                    handler.name(), handler.store().id(), dependencies
-                            ));
-                        } else {
-                            writer.println(String.format("%s.%s(store%d%s);",
-                                    handler.store().helperClass().fullyQualifiedName(),
-                                    handler.name(), handler.store().id(), dependencies
-                            ));
-                        }
+                        writer.println(String.format("store%dChanged = %s.%s(store%d%s);",
+                                handler.store().id(),
+                                handler.store().helperClass().fullyQualifiedName(),
+                                handler.name(), handler.store().id(), parameters
+                        ));
                     }
+
+                    if (dispatcher.hasDispatchStartedHandler()) {
+                        writer.print(Model.Dispatcher.DISPATCH_ENDED_HANDLER_NAME).println("();");
+                    }
+
                     if (dispatcher.hasErrorHandler()) {
                         writer.outdent().println("} catch (Throwable exception) {").indent();
                         writer.print(Model.Dispatcher.DISPATCH_ERROR_HANDLER_NAME).print("(exception);").println();
                     }
                     writer.outdent().println("} finally {").indent();
                     writer.println("dispatching = false;");
-                    if (dispatcher.hasDispatchEndedHandler()) {
-                        writer.print(Model.Dispatcher.DISPATCH_ENDED_HANDLER_NAME).println("();");
+                    if (dispatcher.hasDispatchCompletedHandler()) {
+                        writer.print(Model.Dispatcher.DISPATCH_COMPLETED_HANDLER_NAME).println("();");
                     }
                     writer.outdent().println("}");
                 }
@@ -172,6 +176,17 @@ final class Printing {
                 writer.println("}");
                 writer.println();
             }
+
+
+            // implement utility methods
+            {
+                writer.println("private final void resetChangedStates() {").indent();
+                for (Model.Store store : dispatcher.stores()) {
+                    writer.print("store").print(store.id()).print("Changed = false;").println();
+                }
+                writer.outdent().println("}");
+            }
+
             writer.outdent();
             writer.println("}");
         } finally {
@@ -212,6 +227,11 @@ final class Printing {
         // pass in all dependencies
         StringBuilder signatureSb = new StringBuilder();
         StringBuilder callSb = new StringBuilder();
+
+        if(action.isTyped()) {
+            signatureSb.append(String.format(", %s action", action.type()));
+        }
+
         for (Model.Store store : method.dependencies()) {
             signatureSb.append(", ");
             if (callSb.length() > 0 || action.isTyped()) callSb.append(", ");
@@ -219,17 +239,18 @@ final class Printing {
             callSb.append("store").append(store.id());
         }
 
-
-        if (action.isTyped()) {
-            writer.println(String.format("public static void %s(%s store, %s action%s) {", method.name(),
-                    method.store().fullyQualifiedName(), action.type(), signatureSb));
-        } else {
-            writer.println(String.format("public static void %s(%s store%s) {", method.name(),
-                    method.store().fullyQualifiedName(), signatureSb));
-        }
+        writer.println(String.format("public static boolean %s(%s store%s) {", method.name(),
+                method.store().fullyQualifiedName(), signatureSb));
         writer.indent();
-        writer.println(String.format("store.%s(%s%s);", method.name(),
-                action.isTyped() ? "action" : "", callSb));
+
+        String callExpression = String.format("store.%s(%s%s);", method.name(),
+                action.isTyped() ? "action" : "", callSb);
+        if(action.isReturningBoolean()) {
+            writer.print("return ").println(callExpression);
+        } else {
+            writer.println(callExpression);
+            writer.println("return false;");
+        }
         writer.outdent();
         writer.println("}");
     }

@@ -28,8 +28,8 @@ subprojects {
     apply plugin: 'maven'
     sourceCompatibility = JavaVersion.VERSION_1_7
 
-    version = '0.0.1-rc2'
-    group = "com.github.talshani.flux4j"
+    version = '0.0.1-rc3'
+    group = "io.tals.flux4j"
 
     repositories {
         mavenCentral()

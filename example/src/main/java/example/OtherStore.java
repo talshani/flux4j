@@ -7,11 +7,12 @@ import io.tals.flux4j.shared.ActionHandler;
  */
 public class OtherStore {
     @ActionHandler()
-    void handle(AnAction anAction, SomeStore someStore) {
-
+    boolean handle(AnAction anAction, SomeStore someStore) {
+        return true;
     }
-    @ActionHandler
-    void handleOtherStringAction() {
 
+    @ActionHandler
+    boolean handleOtherStringAction() {
+        return false;
     }
 }

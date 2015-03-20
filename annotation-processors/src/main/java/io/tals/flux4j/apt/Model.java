@@ -53,6 +53,7 @@ final class Model {
         public static final String DISPATCH_ERROR_HANDLER_NAME = "onDispatchError";
         public static final String DISPATCH_IN_PROGRESS_HANDLER_NAME = "onDispatchInProgressError";
         public static final String DISPATCH_ENDED_HANDLER_NAME = "onDispatchEnd";
+        public static final String DISPATCH_COMPLETED_HANDLER_NAME = "onDispatchComplete";
         public static final String DISPATCH_STARTED_HANDLER_NAME = "onDispatchStart";
 
         Dispatcher() {
@@ -157,6 +158,10 @@ final class Model {
             return hasDispatchMethodByName(DISPATCH_ENDED_HANDLER_NAME);
         }
 
+        public boolean hasDispatchCompletedHandler() {
+            return hasDispatchMethodByName(DISPATCH_COMPLETED_HANDLER_NAME);
+        }
+
         private boolean hasDispatchMethodByName(String name) {
             for (Element element : typeElement().getEnclosedElements()) {
                 if (element.getKind() == ElementKind.METHOD) {
@@ -191,8 +196,10 @@ final class Model {
                     HandlerMethod depHandler = dep.findHandlerFor(action);
                     if (depHandler != null) {
                         dependencies.put(handler, depHandler);
-                    } else {
-                        messager().printMessage(Diagnostic.Kind.WARNING, String.format("%s has a redundant dependency on %s", handler, dep));
+//                    } else {
+                        // a handler method can depend on stores that do not handle this action
+//                        String msg = String.format("%s has a redundant dependency on %s", handler.methodElement(), dep.fullyQualifiedName());
+//                        messager().printMessage(Diagnostic.Kind.WARNING, msg, handler.methodElement());
                     }
                 }
             }
@@ -506,10 +513,12 @@ final class Model {
             }
         }
 
+        boolean isReturningBoolean = methodElement.getReturnType().toString().equals("boolean");
+
         if (nonStoreParams.size() == 1) {
-            return new AutoValue_Model_Action(nonStoreParams.get(0).asType(), null);
+            return new AutoValue_Model_Action(nonStoreParams.get(0).asType(), null, isReturningBoolean);
         } else if (methodName.startsWith(prefix)) {
-            return new AutoValue_Model_Action(null, methodName.substring(prefix.length()));
+            return new AutoValue_Model_Action(null, methodName.substring(prefix.length()), isReturningBoolean);
         } else {
             String msg = "Action must be typed or a string";
             messager.printMessage(Diagnostic.Kind.ERROR, msg, methodElement);
@@ -555,6 +564,8 @@ final class Model {
         public boolean isStringAction() {
             return name() != null;
         }
+
+        public abstract boolean isReturningBoolean();
     }
 
     private static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String name) {
