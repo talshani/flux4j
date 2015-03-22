@@ -2,7 +2,11 @@ package io.tals.flux4j.apt;
 
 import autovalue.shaded.com.google.common.common.base.Joiner;
 import com.google.auto.common.MoreElements;
+import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
+import io.tals.flux4j.shared.StoreChangeBinder;
+import io.tals.flux4j.shared.StoreChangeSubscription;
+import io.tals.flux4j.shared.StoreChangesManager;
 
 import javax.annotation.Generated;
 import javax.annotation.processing.Filer;
@@ -55,6 +59,7 @@ class DispatcherJavaBuilder {
             typeSpec.addMethod(createDispatcherConstructor(hasInject, dispatcher));
 
             typeSpec.addMethod(MethodSpec.methodBuilder("isDispatching")
+                    .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     .addStatement("return dispatching")
                     .returns(TypeName.BOOLEAN)
@@ -64,11 +69,57 @@ class DispatcherJavaBuilder {
                 typeSpec.addMethod(createDispatchingMethod(method));
             }
 
+
+            typeSpec.addField(FieldSpec.builder(TypeName.get(StoreChangesManager.class), "storeChangesManager",
+                    Modifier.FINAL, Modifier.PRIVATE)
+                    .initializer("new $T()", TypeName.get(StoreChangesManager.class))
+                    .build());
+            typeSpec.addMethod(
+                    MethodSpec.methodBuilder("bind")
+                            .returns(StoreChangeSubscription.class)
+                            .addAnnotation(Override.class)
+                            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                            .addTypeVariable(TypeVariableName.get("T"))
+                            .addParameter(
+                                    ParameterizedTypeName.get(ClassName.get(StoreChangeBinder.class), TypeVariableName.get("T")),
+                                    "binder"
+                            )
+                            .addParameter(
+                                    TypeVariableName.get("T"),
+                                    "component"
+                            )
+                            .addStatement("return storeChangesManager.add(binder, component)")
+                            .build()
+            );
+
+
+            typeSpec.addMethod(createFireChangeEventsMethod(dispatcher));
+
+
             JavaFile javaFile = JavaFile.builder(implementation.packageName(), typeSpec.build()).build();
             javaFile.writeTo(writer);
         } finally {
             writer.close();
         }
+    }
+
+    private static MethodSpec createFireChangeEventsMethod(Model.Dispatcher dispatcher) {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("fireChangeEvents")
+                .addModifiers(Modifier.PRIVATE, Modifier.FINAL);
+
+        StringBuilder changed = new StringBuilder();
+        StringBuilder stores = new StringBuilder();
+        for (Model.Store store : dispatcher.stores()) {
+            if(changed.length() > 0) changed.append(", ");
+            if(stores.length() > 0) stores.append(", ");
+            changed.append("store").append(store.id()).append("Changed");
+            stores.append("store").append(store.id());
+        }
+        builder.addStatement("Boolean[] changed = new Boolean[] {$L}", changed.toString());
+        builder.addStatement("Object[] stores = new Object[] {$L}", stores.toString());
+        builder.addStatement("storeChangesManager.fire(stores, changed)");
+
+        return builder.build();
     }
 
     private static MethodSpec createResetChangedStatesMethod(Model.Dispatcher dispatcher) {
@@ -161,7 +212,7 @@ class DispatcherJavaBuilder {
                     parameters.append(", ").append("store").append(store.id());
                 }
 
-                builder.addStatement("$N = $T.$L($N$L);",
+                builder.addStatement("$N = $T.$L($N$L)",
                         "store" + handler.store().id() + "Changed",
                         ClassName.get(handler.store().helperClass().packageName(), handler.store().helperClass().className()),
                         handler.name(), "store" + handler.store().id(), parameters.toString()
@@ -182,6 +233,7 @@ class DispatcherJavaBuilder {
             }
         }
         builder.endControlFlow();
+        builder.addStatement("fireChangeEvents()");
 
         return builder.build();
     }

@@ -1,6 +1,7 @@
 package example;
 
 import io.tals.flux4j.shared.AppDispatcher;
+import io.tals.flux4j.shared.FluxDispatcher;
 
 import javax.inject.Named;
 
@@ -14,7 +15,7 @@ import javax.inject.Named;
                 StoreInterface.class
         }
 )
-public abstract class MyFluxDispatcher {
+public abstract class MyFluxDispatcher implements FluxDispatcher {
 
     public MyFluxDispatcher(@Named("xxx") String moo) {
     }
