@@ -1,8 +1,8 @@
 package io.tals.flux4j.apt;
 
-import io.tals.flux4j.shared.AppDispatcher;
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
+import io.tals.flux4j.shared.AppDispatcher;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -19,9 +19,9 @@ import java.util.Set;
  * @author Tal Shani
  */
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("io.tals.flux4j.shared.AppDispatcher")
+@SupportedAnnotationTypes("io.tals.flux4j.shared.StoreChangeHandler")
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
-public final class DispatcherProcessor extends AbstractProcessor {
+public final class StoreChangeHandlerProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         final Messager messager = processingEnv.getMessager();
@@ -42,20 +42,25 @@ public final class DispatcherProcessor extends AbstractProcessor {
                 continue;
             }
 
-            for (Model.Store store : model.stores()) {
-                try {
-                    StoreHelperJavaBuilder.writeStoreHelper(store, filer);
-                } catch (IOException e) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "Failed to write store dispatcher helper", store.typeElement());
-                }
-            }
-
-            try {
-                DispatcherJavaBuilder.writeDispatcher(model, hasInject, hasSingleton, filer);
-            } catch (IOException e) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "Failed to write dispatcher", model.typeElement());
-            }
         }
         return true;
+    }
+
+    private List<TypeMirror> getTypeMirrors(AnnotationValue annotationValue) {
+        List<? extends AnnotationValue> items = (List<? extends AnnotationValue>) annotationValue.getValue();
+        List<TypeMirror> typeMirrors = new ArrayList<TypeMirror>(items.size());
+        for (AnnotationValue item : items) {
+            typeMirrors.add((TypeMirror) item.getValue());
+        }
+        return typeMirrors;
+    }
+
+    private AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String name) {
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues().entrySet()) {
+            if (name.equals(entry.getKey().getSimpleName().toString())) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 }

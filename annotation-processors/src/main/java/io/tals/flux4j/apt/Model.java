@@ -56,6 +56,8 @@ final class Model {
         public static final String DISPATCH_COMPLETED_HANDLER_NAME = "onDispatchComplete";
         public static final String DISPATCH_STARTED_HANDLER_NAME = "onDispatchStart";
 
+        public static final String DIGEST_STORES_NAME = "digestStoreChanges";
+
         Dispatcher() {
         }
 
@@ -160,6 +162,10 @@ final class Model {
 
         public boolean hasDispatchCompletedHandler() {
             return hasDispatchMethodByName(DISPATCH_COMPLETED_HANDLER_NAME);
+        }
+
+        public boolean hasDigestStoresHandler() {
+            return hasDispatchMethodByName(DIGEST_STORES_NAME);
         }
 
         private boolean hasDispatchMethodByName(String name) {
@@ -350,16 +356,6 @@ final class Model {
 
         abstract ImmutableList<AnnotationMirror> annotations();
 
-        public String asDeclarationInJavaCode(String paramPrefix) {
-            StringBuilder sb = new StringBuilder();
-            for (AnnotationMirror annotation : annotations()) {
-                sb.append(annotation).append(" ");
-            }
-            sb.append(type()).append(" ");
-            sb.append(asNameInJavaCode(paramPrefix));
-            return sb.toString();
-        }
-
         public String asNameInJavaCode(String paramPrefix) {
             return paramPrefix + name();
         }
@@ -383,6 +379,10 @@ final class Model {
             ExecutableElement methodElement = methodElement();
             Messager messager = store().dispatcher().messager();
             return getAction(store().dispatcher(), methodElement, messager, name(), "handle");
+        }
+
+        public boolean isReturningBoolean() {
+            return methodElement().getReturnType().toString().equals("boolean");
         }
 
         public boolean isTypedHandler() {
@@ -513,12 +513,11 @@ final class Model {
             }
         }
 
-        boolean isReturningBoolean = methodElement.getReturnType().toString().equals("boolean");
 
         if (nonStoreParams.size() == 1) {
-            return new AutoValue_Model_Action(nonStoreParams.get(0).asType(), null, isReturningBoolean);
+            return new AutoValue_Model_Action(nonStoreParams.get(0).asType(), null);
         } else if (methodName.startsWith(prefix)) {
-            return new AutoValue_Model_Action(null, methodName.substring(prefix.length()), isReturningBoolean);
+            return new AutoValue_Model_Action(null, methodName.substring(prefix.length()));
         } else {
             String msg = "Action must be typed or a string";
             messager.printMessage(Diagnostic.Kind.ERROR, msg, methodElement);
@@ -564,8 +563,6 @@ final class Model {
         public boolean isStringAction() {
             return name() != null;
         }
-
-        public abstract boolean isReturningBoolean();
     }
 
     private static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String name) {
