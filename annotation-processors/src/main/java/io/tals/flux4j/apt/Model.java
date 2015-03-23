@@ -240,7 +240,6 @@ final class Model {
         }
 
         /**
-         * @param mirror
          * @return The store with the given type, or null if no store for the given type could be found
          */
         public Store findStoreByType(TypeMirror mirror) {
@@ -528,6 +527,7 @@ final class Model {
 
     private static List<TypeMirror> getTypeMirrors(AnnotationValue annotationValue) {
         if (annotationValue == null) return new ArrayList<TypeMirror>(0);
+        @SuppressWarnings("unchecked")
         List<? extends AnnotationValue> items = (List<? extends AnnotationValue>) annotationValue.getValue();
         if (items == null || items.isEmpty()) {
             return new ArrayList<TypeMirror>(0);

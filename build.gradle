@@ -9,7 +9,7 @@ buildscript {
 
     dependencies {
         classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.5'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:0.5'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0'
     }
 }
 
@@ -28,7 +28,7 @@ subprojects {
     apply plugin: 'maven'
     sourceCompatibility = JavaVersion.VERSION_1_7
 
-    version = '0.0.1-rc3'
+    version = project.hasProperty("version") ? project.gatProperty("version") : '0.0.1-default'
     group = "io.tals.flux4j"
 
     repositories {
@@ -93,14 +93,19 @@ subprojects {
         }
     }
 
+    install.repositories.mavenInstaller.pom.dependencies.removeAll { it.artifactIt == "gwt-user" }
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
 
                 pom.withXml {
-                    def autoCommonDep = asNode().dependencies[0].find {dep -> dep.artifactId.text() == "auto-common"}
-                    if(autoCommonDep) autoCommonDep.remove(autoCommonDep.scope)
+                    def artifactsToRemove = ["auto-common", "gwt-user", "jsr305"]
+
+                    asNode().dependencies[0].children().removeAll {
+                        return artifactsToRemove.contains(it.artifactId.text())
+                    }
                 }
             }
         }
@@ -123,7 +128,7 @@ subprojects {
 
     compileJava.doFirst {
 
-        if(file('generated').exists()) {
+        if (file('generated').exists()) {
             file('generated').deleteDir()
         }
         file('generated').mkdirs()

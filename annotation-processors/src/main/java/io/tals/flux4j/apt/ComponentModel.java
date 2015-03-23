@@ -1,11 +1,11 @@
 package io.tals.flux4j.apt;
 
-import autovalue.shaded.com.google.common.common.collect.ImmutableSet;
-import autovalue.shaded.com.google.common.common.collect.Iterables;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.squareup.javapoet.MethodSpec;
 
 import javax.annotation.processing.Messager;

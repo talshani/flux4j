@@ -1,8 +1,6 @@
 package io.tals.flux4j.apt;
 
-import autovalue.shaded.com.google.common.common.base.Joiner;
 import com.google.auto.common.MoreElements;
-import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
 import io.tals.flux4j.shared.StoreChangeBinder;
 import io.tals.flux4j.shared.StoreChangeSubscription;
@@ -163,7 +161,7 @@ class DispatcherJavaBuilder {
 
         // if base class had constructor, we should call is
         if (dispatcher.hasConstructor()) {
-            builder.addStatement("super($L)", Joiner.on(", ").join(superParams));
+            builder.addStatement("super($L)", StringUtils.joinParams(superParams));
         }
         for (Model.Store store : dispatcher.stores()) {
             builder.addStatement("this.$N = $N", "store" + store.id(), "store" + store.id());

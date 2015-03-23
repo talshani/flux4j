@@ -1,6 +1,5 @@
 package io.tals.flux4j.apt;
 
-import autovalue.shaded.com.google.common.common.base.Joiner;
 import com.squareup.javapoet.*;
 
 import javax.annotation.Generated;
@@ -9,11 +8,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author Tal Shani
