@@ -28,7 +28,7 @@ subprojects {
     apply plugin: 'maven'
     sourceCompatibility = JavaVersion.VERSION_1_7
 
-    version = project.hasProperty("version") ? project.gatProperty("version") : '0.0.1-default'
+    version = project.hasProperty("version") ? project.getProperty("version") : '0.0.1-default'
     group = "io.tals.flux4j"
 
     repositories {
