@@ -4,3 +4,5 @@ include 'annotation-processors'
 
 include 'example'
 
+include 'example-todo'
+

@@ -1,0 +1,16 @@
+
+repositories {
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+}
+
+
+dependencies {
+    compile project(':runtime')
+    compile project(':annotation-processors')
+    compile 'javax.inject:javax.inject:1'
+    compile group: "com.google.dagger", name: "dagger", version: "2.0-SNAPSHOT", changing: true
+    compile group: "com.google.dagger", name: "dagger-compiler", version: "2.0-SNAPSHOT", changing: true
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
