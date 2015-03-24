@@ -163,7 +163,7 @@ final class ComponentModel {
         abstract StoreChangeHandlerMethod handlerMethod();
 
         public TypeElement element() {
-            return MoreTypes.asTypeElement(handlerMethod().component().types(), type());
+            return MoreTypes.asTypeElement(type());
         }
 
         public String key() {

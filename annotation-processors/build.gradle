@@ -1,8 +1,13 @@
+repositories {
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+}
 
 dependencies {
     provided 'com.google.auto.service:auto-service:1.+'
     provided 'com.google.auto.value:auto-value:1.+'
-    compile 'com.google.auto:auto-common:0.3'
+    compile 'com.google.auto:auto-common:1.0-SNAPSHOT'
     compile 'com.google.code.findbugs:jsr305:1.3.9'
     compile 'com.squareup:javapoet:1.0.0'
     compile project(':runtime')
@@ -14,5 +19,11 @@ dependencies {
 bintray {
     pkg {
         desc = 'Annotation processor for generating flux dispatcher with dependencies'
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.auto:auto-common:1.0-SNAPSHOT'
     }
 }

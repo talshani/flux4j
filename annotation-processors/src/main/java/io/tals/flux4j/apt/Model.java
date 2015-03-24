@@ -126,7 +126,7 @@ final class Model {
                 ImmutableList.Builder<Store> storesBuilder = ImmutableList.builder();
                 int storeId = 0;
                 for (TypeMirror storeType : getTypeMirrors(getAnnotationValue(annotationMirror, "stores"))) {
-                    storesBuilder.add(new AutoValue_Model_Store(storeId++, Dispatcher.this, MoreTypes.asTypeElement(types(), storeType)));
+                    storesBuilder.add(new AutoValue_Model_Store(storeId++, Dispatcher.this, MoreTypes.asTypeElement(storeType)));
                 }
                 stores = storesBuilder.build();
             }
@@ -202,10 +202,6 @@ final class Model {
                     HandlerMethod depHandler = dep.findHandlerFor(action);
                     if (depHandler != null) {
                         dependencies.put(handler, depHandler);
-//                    } else {
-                        // a handler method can depend on stores that do not handle this action
-//                        String msg = String.format("%s has a redundant dependency on %s", handler.methodElement(), dep.fullyQualifiedName());
-//                        messager().printMessage(Diagnostic.Kind.WARNING, msg, handler.methodElement());
                     }
                 }
             }
@@ -244,7 +240,7 @@ final class Model {
          */
         public Store findStoreByType(TypeMirror mirror) {
             for (Store store : stores()) {
-                if (store.typeElement().getQualifiedName().equals(MoreTypes.asTypeElement(types(), mirror).getQualifiedName())) {
+                if (store.typeElement().getQualifiedName().equals(MoreTypes.asTypeElement(mirror).getQualifiedName())) {
                     return store;
                 }
             }

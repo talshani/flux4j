@@ -19,25 +19,26 @@ import java.util.Set;
  * @author Tal Shani
  */
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("io.tals.flux4j.shared.AppDispatcher")
+@SupportedAnnotationTypes({"io.tals.flux4j.shared.AppDispatcher", "io.tals.flux4j.shared.ActionHandler"})
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 public final class DispatcherProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         final Messager messager = processingEnv.getMessager();
         final Filer filer = processingEnv.getFiler();
-        boolean claimed = (annotations.size() == 1
-                && annotations.iterator().next().getQualifiedName().toString().equals(
-                AppDispatcher.class.getName()));
-
-        if(!claimed) return false;
+//        boolean claimed = (annotations.size() == 1
+//                && annotations.iterator().next().getQualifiedName().toString().equals(
+//                AppDispatcher.class.getName()));
+//
+//        if(!claimed) return false;
 
         boolean hasInject = processingEnv.getElementUtils().getTypeElement("javax.inject.Inject") != null;
         boolean hasSingleton = processingEnv.getElementUtils().getTypeElement("javax.inject.Singleton") != null;
 
+        if (roundEnv.processingOver()) return false;
         for (Element dispatcher : roundEnv.getElementsAnnotatedWith(AppDispatcher.class)) {
             Model.Dispatcher model = Model.dispatcher(processingEnv.getTypeUtils(), processingEnv.getMessager(), MoreElements.asType(dispatcher));
-            if(model == null) {
+            if (model == null) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Could not construct dispatcher model", dispatcher);
                 continue;
             }

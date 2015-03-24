@@ -26,7 +26,8 @@ class DispatcherJavaBuilder {
         JavaFileObject sourceFile = filer.createSourceFile(implementation.fullyQualifiedName(), implementation.dispatcherTypeElement());
         Writer writer = sourceFile.openWriter();
         try {
-            TypeSpec.Builder typeSpec = TypeSpec.classBuilder(implementation.className());
+            TypeSpec.Builder typeSpec = TypeSpec.classBuilder(implementation.className())
+                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
             typeSpec.addAnnotation(AnnotationSpec.builder(Generated.class)
                     .addMember("value", "$S", DispatcherProcessor.class.getCanonicalName())
